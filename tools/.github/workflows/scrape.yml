@@ -1,0 +1,30 @@
+name: Build SSQ Excel
+
+on:
+  workflow_dispatch: {}   # 允许手动运行（Actions 页有按钮）:contentReference[oaicite:9]{index=9}
+  schedule:
+    # GitHub Actions 的 cron 用 UTC。我们设两条：14:20 和 15:20 UTC，
+    # 这样在洛杉矶 DST/PDT 与冬令时 PST 都大致对应你早上 7:20 左右。:contentReference[oaicite:10]{index=10}
+    - cron: "20 14 * * 2,4,0"   # Tue/Thu/Sun 14:20 UTC
+    - cron: "20 15 * * 2,4,0"   # Tue/Thu/Sun 15:20 UTC（冬令时兜底）
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Run scraper (recent page)
+        run: |
+          python tools/ssq_multi_source.py --mode recent --out data/ssq_history_with_regions.xlsx
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssq_history_with_regions
+          path: data/ssq_history_with_regions.xlsx
+          if-no-files-found: error
